@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="FOOT26 - gestion de championnat de football">
+  <title>FOOT26 — Championnat</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-ball">⚽</div>
+      <div><strong>FOOT26</strong><small>CHAMPIONSHIP</small></div>
+    </div>
+    <div class="top-actions">
+      <button id="refreshBtn" class="icon-btn" title="Actualiser">↻</button>
+      <button id="notifBtn" class="icon-btn" title="Notifications">🔔</button>
+      <div id="userArea"></div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <nav>
+        <button class="nav-item active" data-section="dashboard">⌂ <span>Dashboard</span></button>
+        <button class="nav-item" data-section="matches">▣ <span>Matchs</span></button>
+        <button class="nav-item" data-section="standings">🏆 <span>Classement</span></button>
+        <button class="nav-item" data-section="teams">⚽ <span>Équipes</span></button>
+        <button class="nav-item" data-section="players">👤 <span>Joueurs</span></button>
+        <button class="nav-item" data-section="statistics">📊 <span>Statistiques</span></button>
+        <button class="nav-item" data-section="referees">🟨 <span>Arbitres</span></button>
+        <button class="nav-item" data-section="stadiums">🏟️ <span>Stades</span></button>
+        <button class="nav-item admin-only" data-section="admin">⚙ <span>Administration</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <span>FOOT26 v2.0</span>
+        <span>Node + Express + Supabase</span>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section id="dashboard" class="section active">
+        <div class="hero">
+          <div>
+            <span class="eyebrow">SAISON 2026</span>
+            <h1>Le championnat,<br><span>en un seul endroit.</span></h1>
+            <p>Suivez les matchs, résultats, classements et performances des joueurs.</p>
+          </div>
+          <div class="hero-ball">⚽</div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card"><span>Équipes</span><strong id="teamCount">—</strong><small>clubs inscrits</small></div>
+          <div class="stat-card"><span>Joueurs</span><strong id="playerCount">—</strong><small>joueurs enregistrés</small></div>
+          <div class="stat-card"><span>Matchs à venir</span><strong id="upcomingCount">—</strong><small>prochains matchs</small></div>
+          <div class="stat-card accent"><span>Leader</span><strong id="leaderName">—</strong><small id="leaderPoints">—</small></div>
+        </div>
+
+        <div class="two-columns">
+          <div class="panel">
+            <div class="panel-title"><h2>Prochains matchs</h2><button class="text-btn" data-section-link="matches">Voir tout →</button></div>
+            <div id="dashboardMatches" class="match-list"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-title"><h2>Classement</h2><button class="text-btn" data-section-link="standings">Complet →</button></div>
+            <div id="dashboardStandings"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="matches" class="section">
+        <div class="page-heading"><div><span class="eyebrow">CALENDRIER</span><h1>Matchs</h1></div><button id="addMatchBtn" class="primary admin-only">+ Programmer un match</button></div>
+        <div class="filters"><input id="matchSearch" placeholder="Rechercher une équipe..."><select id="matchStatus"><option value="">Tous les statuts</option><option value="scheduled">À venir</option><option value="finished">Terminés</option><option value="live">En direct</option></select></div>
+        <div id="matchesList" class="cards-grid"></div>
+      </section>
+
+      <section id="standings" class="section">
+        <div class="page-heading"><div><span class="eyebrow">CHAMPIONNAT</span><h1>Classement</h1></div></div>
+        <div class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>#</th><th>Équipe</th><th>MJ</th><th>G</th><th>N</th><th>P</th><th>BP</th><th>BC</th><th>Diff.</th><th>Pts</th></tr></thead><tbody id="standingsBody"></tbody></table></div></div>
+      </section>
+
+      <section id="teams" class="section">
+        <div class="page-heading"><div><span class="eyebrow">CHAMPIONNAT</span><h1>Équipes</h1></div><button id="addTeamBtn" class="primary admin-only">+ Ajouter</button></div>
+        <div class="filters"><input id="teamSearch" placeholder="Rechercher une équipe..."></div>
+        <div id="teamsList" class="cards-grid"></div>
+      </section>
+
+      <section id="players" class="section">
+        <div class="page-heading"><div><span class="eyebrow">EFFECTIF</span><h1>Joueurs</h1></div><button id="addPlayerBtn" class="primary admin-only">+ Ajouter</button></div>
+        <div class="filters"><input id="playerSearch" placeholder="Nom du joueur..."></div>
+        <div class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>Joueur</th><th>Équipe</th><th>Position</th><th>N°</th><th class="admin-only">Actions</th></tr></thead><tbody id="playersBody"></tbody></table></div></div>
+      </section>
+
+      <section id="statistics" class="section">
+        <div class="page-heading"><div><span class="eyebrow">PERFORMANCES</span><h1>Statistiques</h1></div></div>
+        <div class="two-columns">
+          <div class="panel"><div class="panel-title"><h2>Meilleurs buteurs</h2></div><div id="scorersList"></div></div>
+          <div class="panel"><div class="panel-title"><h2>Indicateurs</h2></div><div class="stat-explain"><div><strong>⚽</strong><span>Classement des buteurs</span></div><div><strong>🟨</strong><span>Cartons jaunes</span></div><div><strong>🟥</strong><span>Cartons rouges</span></div></div></div>
+        </div>
+      </section>
+
+      <section id="referees" class="section"><div class="page-heading"><div><span class="eyebrow">OFFICIELS</span><h1>Arbitres</h1></div></div><div id="refereesList" class="cards-grid"></div></section>
+      <section id="stadiums" class="section"><div class="page-heading"><div><span class="eyebrow">INFRASTRUCTURES</span><h1>Stades</h1></div></div><div id="stadiumsList" class="cards-grid"></div></section>
+
+      <section id="admin" class="section">
+        <div class="page-heading"><div><span class="eyebrow">SÉCURITÉ</span><h1>Administration</h1></div></div>
+        <div class="admin-grid">
+          <div class="panel"><h2>Gestion</h2><p>Ajoutez les ressources utilisées par le championnat.</p><div class="card-actions"><button class="primary" onclick="openCoachForm()">+ Entraîneur</button><button class="primary" onclick="openRefForm()">+ Arbitre</button><button class="primary" onclick="openStadiumForm()">+ Stade</button><button class="primary" onclick="openNotifForm()">+ Notification</button></div></div>
+          <div class="panel"><h2>Sécurité</h2><p>Les écritures exigent une session valide et le rôle <code>admin</code>. La clé service role reste uniquement côté serveur.</p><p><code>GET /api/health</code> permet de vérifier le déploiement.</p></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="authModal" class="modal hidden">
+    <div class="modal-card">
+      <button class="close" id="closeAuth">×</button>
+      <div class="brand modal-brand"><div class="brand-ball">⚽</div><strong>FOOT26</strong></div>
+      <h2 id="authTitle">Connexion</h2>
+      <form id="authForm">
+        <div id="nameField" class="form-row hidden"><label>Nom complet<input id="fullName"></label></div>
+        <label>Email<input id="email" type="email" required></label>
+        <label>Mot de passe<input id="password" type="password" minlength="6" required></label>
+        <button class="primary wide" type="submit" id="authSubmit">Se connecter</button>
+      </form>
+      <button class="link-button" id="toggleAuth">Créer un compte</button>
+      <p class="form-help">L'authentification est gérée par Supabase Auth.</p>
+    </div>
+  </div>
+
+  <div id="formModal" class="modal hidden">
+    <div class="modal-card large"><button class="close" id="closeForm">×</button><div id="formContent"></div></div>
+  </div>
+
+  <script src="/js/config.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
