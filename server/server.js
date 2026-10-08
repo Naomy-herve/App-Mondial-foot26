@@ -1,4 +1,4 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
 const path = require("path");
 const express = require("express");
@@ -19,7 +19,7 @@ app.use(express.static(publicDir, { extensions: ["html"], maxAge: isProduction ?
 
 function requireEnv(name) {
   const value = process.env[name];
-  if (!value) throw new Error(`${name} n'est pas configurée.`);
+  if (!value) throw new Error(`${name} n'est pas configurÃ©e.`);
   return value;
 }
 
@@ -62,7 +62,7 @@ async function requireAuth(req, res, next) {
     const token = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
     if (!token || token.length < 20) return res.status(401).json({ error: "Authentification requise." });
     const { data, error } = await anonClient().auth.getUser(token);
-    if (error || !data.user) return res.status(401).json({ error: "Session invalide ou expirée." });
+    if (error || !data.user) return res.status(401).json({ error: "Session invalide ou expirÃ©e." });
     req.user = data.user;
     req.accessToken = token;
     next();
@@ -74,10 +74,10 @@ async function requireAuth(req, res, next) {
 async function requireAdmin(req, res, next) {
   try {
     const { data, error } = await db().from("profiles").select("role").eq("id", req.user.id).maybeSingle();
-    if (error || data?.role !== "admin") return res.status(403).json({ error: "Accès administrateur requis." });
+    if (error || data?.role !== "admin") return res.status(403).json({ error: "AccÃ¨s administrateur requis." });
     next();
   } catch (error) {
-    res.status(503).json({ error: "Vérification administrateur indisponible." });
+    res.status(503).json({ error: "VÃ©rification administrateur indisponible." });
   }
 }
 
@@ -96,11 +96,11 @@ app.post("/api/auth/signup", asyncRoute(async (req, res) => {
   const password = String(req.body.password || "");
   const fullName = cleanText(req.body.full_name, 120) || "Utilisateur";
   if (!email || !/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ error: "Adresse email invalide." });
-  if (password.length < 8) return res.status(400).json({ error: "Le mot de passe doit contenir au moins 8 caractères." });
+  if (password.length < 8) return res.status(400).json({ error: "Le mot de passe doit contenir au moins 8 caractÃ¨res." });
 
   const { data, error } = await anonClient().auth.signUp({ email, password, options: { data: { full_name: fullName } } });
   if (error) return res.status(400).json({ error: error.message });
-  res.status(201).json({ user: data.user, session: data.session, message: data.session ? "Compte créé et connecté." : "Compte créé. Vérifiez votre email." });
+  res.status(201).json({ user: data.user, session: data.session, message: data.session ? "Compte crÃ©Ã© et connectÃ©." : "Compte crÃ©Ã©. VÃ©rifiez votre email." });
 }));
 
 app.post("/api/auth/login", asyncRoute(async (req, res) => {
@@ -116,7 +116,7 @@ app.post("/api/auth/refresh", asyncRoute(async (req, res) => {
   const refreshToken = cleanText(req.body.refresh_token, 2048);
   if (!refreshToken) return res.status(400).json({ error: "Refresh token manquant." });
   const { data, error } = await anonClient().auth.refreshSession({ refresh_token: refreshToken });
-  if (error || !data.session) return res.status(401).json({ error: "Session expirée. Reconnectez-vous." });
+  if (error || !data.session) return res.status(401).json({ error: "Session expirÃ©e. Reconnectez-vous." });
   res.json({ user: data.user, session: data.session });
 }));
 
@@ -124,7 +124,7 @@ app.post("/api/auth/logout", requireAuth, (req, res) => res.json({ success: true
 
 app.get("/api/profile", requireAuth, asyncRoute(async (req, res) => {
   const { data, error } = await db().from("profiles").select("id,full_name,role,created_at").eq("id", req.user.id).maybeSingle();
-  if (error || !data) return res.status(404).json({ error: "Profil introuvable. Exécutez database/schema.sql." });
+  if (error || !data) return res.status(404).json({ error: "Profil introuvable. ExÃ©cutez database/schema.sql." });
   res.json(data);
 }));
 
@@ -134,7 +134,7 @@ async function dashboardData() {
   const [teams, players, matches, standings] = await Promise.all([
     c.from("teams").select("id,name,city,logo_url,coach_id,coaches(id,first_name,last_name)").order("name"),
     c.from("players").select("id", { count: "exact", head: true }),
-    c.from("matches").select("id,match_date,status,home_score,away_score,home:teams!matches_home_id_fkey(id,name),away:teams!matches_away_id_fkey(id,name),stadiums(name)").in("status", ["scheduled", "live"]).gte("match_date", now).order("match_date", { ascending: true }).limit(8),
+    c.from("matches").select("id,match_date,status,home_score,away_score,home:teams!matches_home_team_id_fkey(id,name),away:teams!matches_away_team_id_fkey(id,name),stadiums(name)").in("status", ["scheduled", "live"]).gte("match_date", now).order("match_date", { ascending: true }).limit(8),
     c.from("standings").select("*").order("points", { ascending: false }).order("goal_difference", { ascending: false }).order("goals_for", { ascending: false }).order("name")
   ]);
   const error = [teams, players, matches, standings].find(x => x.error);
@@ -152,7 +152,7 @@ app.get("/api/teams", asyncRoute(async (req, res) => {
 
 app.post("/api/teams", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
   const name = cleanText(req.body.name, 100);
-  if (!name) return res.status(400).json({ error: "Le nom de l'équipe est obligatoire." });
+  if (!name) return res.status(400).json({ error: "Le nom de l'Ã©quipe est obligatoire." });
   const payload = { name, city: cleanText(req.body.city, 100), coach_id: isUuid(req.body.coach_id) ? req.body.coach_id : null, logo_url: cleanText(req.body.logo_url, 500) };
   const { data, error } = await db().from("teams").insert(payload).select("id,name,city,logo_url,coach_id,coaches(id,first_name,last_name)").single();
   if (error) return res.status(400).json({ error: error.message });
@@ -160,7 +160,7 @@ app.post("/api/teams", requireAuth, requireAdmin, asyncRoute(async (req, res) =>
 }));
 
 app.put("/api/teams/:id", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
-  if (!isUuid(req.params.id)) return res.status(400).json({ error: "Identifiant d'équipe invalide." });
+  if (!isUuid(req.params.id)) return res.status(400).json({ error: "Identifiant d'Ã©quipe invalide." });
   const update = {};
   for (const key of ["name", "city", "logo_url"]) if (req.body[key] !== undefined) update[key] = cleanText(req.body[key], key === "logo_url" ? 500 : 100);
   if (req.body.coach_id !== undefined) update.coach_id = isUuid(req.body.coach_id) ? req.body.coach_id : null;
@@ -171,9 +171,9 @@ app.put("/api/teams/:id", requireAuth, requireAdmin, asyncRoute(async (req, res)
 }));
 
 app.delete("/api/teams/:id", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
-  if (!isUuid(req.params.id)) return res.status(400).json({ error: "Identifiant d'équipe invalide." });
+  if (!isUuid(req.params.id)) return res.status(400).json({ error: "Identifiant d'Ã©quipe invalide." });
   const { error } = await db().from("teams").delete().eq("id", req.params.id);
-  if (error) return res.status(409).json({ error: "Impossible de supprimer cette équipe : elle est probablement utilisée par un match." });
+  if (error) return res.status(409).json({ error: "Impossible de supprimer cette Ã©quipe : elle est probablement utilisÃ©e par un match." });
   res.json({ success: true });
 }));
 
@@ -185,7 +185,7 @@ app.get("/api/coaches", asyncRoute(async (req, res) => {
 
 app.post("/api/coaches", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
   const first_name = cleanText(req.body.first_name, 80), last_name = cleanText(req.body.last_name, 80);
-  if (!first_name || !last_name) return res.status(400).json({ error: "Prénom et nom obligatoires." });
+  if (!first_name || !last_name) return res.status(400).json({ error: "PrÃ©nom et nom obligatoires." });
   const { data, error } = await db().from("coaches").insert({ first_name, last_name, license_number: cleanText(req.body.license_number, 80) }).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
@@ -202,7 +202,7 @@ app.put("/api/coaches/:id", requireAuth, requireAdmin, asyncRoute(async (req, re
 
 app.delete("/api/coaches/:id", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
   const { error } = await db().from("coaches").delete().eq("id", req.params.id);
-  if (error) return res.status(409).json({ error: "Impossible de supprimer cet entraîneur s'il est affecté à une équipe." });
+  if (error) return res.status(409).json({ error: "Impossible de supprimer cet entraÃ®neur s'il est affectÃ© Ã  une Ã©quipe." });
   res.json({ success: true });
 }));
 
@@ -219,8 +219,8 @@ app.post("/api/players", requireAuth, requireAdmin, asyncRoute(async (req, res) 
   const first_name = cleanText(req.body.first_name, 80), last_name = cleanText(req.body.last_name, 80);
   const team_id = req.body.team_id;
   const jersey = req.body.jersey_number === "" || req.body.jersey_number == null ? null : integer(req.body.jersey_number, { min: 0, max: 99 });
-  if (!first_name || !last_name || !isUuid(team_id)) return res.status(400).json({ error: "Prénom, nom et équipe sont obligatoires." });
-  if (req.body.jersey_number !== "" && req.body.jersey_number != null && jersey === null) return res.status(400).json({ error: "Numéro de maillot invalide." });
+  if (!first_name || !last_name || !isUuid(team_id)) return res.status(400).json({ error: "PrÃ©nom, nom et Ã©quipe sont obligatoires." });
+  if (req.body.jersey_number !== "" && req.body.jersey_number != null && jersey === null) return res.status(400).json({ error: "NumÃ©ro de maillot invalide." });
   const { data, error } = await db().from("players").insert({ first_name, last_name, position: cleanText(req.body.position, 50), team_id, jersey_number: jersey, birth_date: req.body.birth_date || null }).select("id,first_name,last_name,position,team_id,jersey_number,birth_date,teams(id,name)").single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
@@ -230,8 +230,8 @@ app.put("/api/players/:id", requireAuth, requireAdmin, asyncRoute(async (req, re
   if (!isUuid(req.params.id)) return res.status(400).json({ error: "Identifiant joueur invalide." });
   const update = {};
   for (const key of ["first_name", "last_name", "position", "birth_date"]) if (req.body[key] !== undefined) update[key] = cleanText(req.body[key], key === "position" ? 50 : 80);
-  if (req.body.team_id !== undefined) { if (!isUuid(req.body.team_id)) return res.status(400).json({ error: "Équipe invalide." }); update.team_id = req.body.team_id; }
-  if (req.body.jersey_number !== undefined) { const n = req.body.jersey_number === "" ? null : integer(req.body.jersey_number, { min: 0, max: 99 }); if (req.body.jersey_number !== "" && n === null) return res.status(400).json({ error: "Numéro invalide." }); update.jersey_number = n; }
+  if (req.body.team_id !== undefined) { if (!isUuid(req.body.team_id)) return res.status(400).json({ error: "Ã‰quipe invalide." }); update.team_id = req.body.team_id; }
+  if (req.body.jersey_number !== undefined) { const n = req.body.jersey_number === "" ? null : integer(req.body.jersey_number, { min: 0, max: 99 }); if (req.body.jersey_number !== "" && n === null) return res.status(400).json({ error: "NumÃ©ro invalide." }); update.jersey_number = n; }
   const { data, error } = await db().from("players").update(update).eq("id", req.params.id).select("id,first_name,last_name,position,team_id,jersey_number,birth_date,teams(id,name)").single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
@@ -244,7 +244,7 @@ app.delete("/api/players/:id", requireAuth, requireAdmin, asyncRoute(async (req,
 }));
 
 function matchSelect() {
-  return "id,match_date,status,home_score,away_score,home:teams!matches_home_id_fkey(id,name),away:teams!matches_away_id_fkey(id,name),stadiums(id,name,city),referees(id,first_name,last_name)";
+  return "id,match_date,status,home_score,away_score,home:teams!matches_home_team_id_fkey(id,name),away:teams!matches_away_team_id_fkey(id,name),stadiums(id,name,city),referees(id,first_name,last_name)";
 }
 
 app.get("/api/matches", asyncRoute(async (req, res) => {
@@ -258,9 +258,9 @@ app.get("/api/matches", asyncRoute(async (req, res) => {
 app.post("/api/matches", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
   const { home_team_id, away_team_id, stadium_id, referee_id } = req.body;
   const date = new Date(req.body.match_date);
-  if (!isUuid(home_team_id) || !isUuid(away_team_id) || !Number.isFinite(date.getTime())) return res.status(400).json({ error: "Équipes et date valides obligatoires." });
-  if (home_team_id === away_team_id) return res.status(400).json({ error: "Les deux équipes doivent être différentes." });
-  if (date.getTime() < Date.now() - 60000) return res.status(400).json({ error: "La date du match doit être future." });
+  if (!isUuid(home_team_id) || !isUuid(away_team_id) || !Number.isFinite(date.getTime())) return res.status(400).json({ error: "Ã‰quipes et date valides obligatoires." });
+  if (home_team_id === away_team_id) return res.status(400).json({ error: "Les deux Ã©quipes doivent Ãªtre diffÃ©rentes." });
+  if (date.getTime() < Date.now() - 60000) return res.status(400).json({ error: "La date du match doit Ãªtre future." });
   const payload = { home_team_id, away_team_id, stadium_id: isUuid(stadium_id) ? stadium_id : null, referee_id: isUuid(referee_id) ? referee_id : null, match_date: date.toISOString(), status: "scheduled", home_score: 0, away_score: 0 };
   const { data, error } = await db().from("matches").insert(payload).select(matchSelect()).single();
   if (error) return res.status(400).json({ error: error.message });
@@ -273,7 +273,7 @@ app.put("/api/matches/:id", requireAuth, requireAdmin, asyncRoute(async (req, re
   for (const key of ["home_team_id", "away_team_id", "stadium_id", "referee_id"]) if (req.body[key] !== undefined) update[key] = req.body[key] && isUuid(req.body[key]) ? req.body[key] : null;
   if (req.body.match_date !== undefined) { const d = new Date(req.body.match_date); if (!Number.isFinite(d.getTime())) return res.status(400).json({ error: "Date invalide." }); update.match_date = d.toISOString(); }
   if (req.body.status !== undefined && ["scheduled", "live", "finished", "cancelled"].includes(req.body.status)) update.status = req.body.status; else if (req.body.status !== undefined) return res.status(400).json({ error: "Statut invalide." });
-  if (update.home_team_id && update.away_team_id && update.home_team_id === update.away_team_id) return res.status(400).json({ error: "Les deux équipes doivent être différentes." });
+  if (update.home_team_id && update.away_team_id && update.home_team_id === update.away_team_id) return res.status(400).json({ error: "Les deux Ã©quipes doivent Ãªtre diffÃ©rentes." });
   const { data, error } = await db().from("matches").update(update).eq("id", req.params.id).select(matchSelect()).single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
@@ -288,7 +288,7 @@ app.delete("/api/matches/:id", requireAuth, requireAdmin, asyncRoute(async (req,
 app.put("/api/matches/:id/result", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
   const home = integer(req.body.home_score, { min: 0, max: 99 });
   const away = integer(req.body.away_score, { min: 0, max: 99 });
-  if (home === null || away === null) return res.status(400).json({ error: "Les scores doivent être des entiers de 0 à 99." });
+  if (home === null || away === null) return res.status(400).json({ error: "Les scores doivent Ãªtre des entiers de 0 Ã  99." });
   const { data, error } = await db().from("matches").update({ home_score: home, away_score: away, status: "finished" }).eq("id", req.params.id).select(matchSelect()).single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
@@ -316,7 +316,7 @@ app.get("/api/goals", asyncRoute(async (req, res) => {
 
 app.post("/api/goals", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
   const match_id = req.body.match_id, team_id = req.body.team_id, player_id = req.body.player_id || null, minute = integer(req.body.minute, { min: 0, max: 130 });
-  if (!isUuid(match_id) || !isUuid(team_id) || minute === null) return res.status(400).json({ error: "Match, équipe et minute valides obligatoires." });
+  if (!isUuid(match_id) || !isUuid(team_id) || minute === null) return res.status(400).json({ error: "Match, Ã©quipe et minute valides obligatoires." });
   if (player_id && !isUuid(player_id)) return res.status(400).json({ error: "Joueur invalide." });
   const { data, error } = await db().from("goals").insert({ match_id, team_id, player_id, minute }).select("id,match_id,player_id,team_id,minute").single();
   if (error) return res.status(400).json({ error: error.message });
@@ -339,7 +339,7 @@ app.get("/api/cards", asyncRoute(async (req, res) => {
 
 app.post("/api/cards", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
   const match_id = req.body.match_id, team_id = req.body.team_id, player_id = req.body.player_id || null, minute = integer(req.body.minute, { min: 0, max: 130 });
-  if (!isUuid(match_id) || !isUuid(team_id) || minute === null || !["yellow", "red"].includes(req.body.card_type)) return res.status(400).json({ error: "Match, équipe, type et minute valides obligatoires." });
+  if (!isUuid(match_id) || !isUuid(team_id) || minute === null || !["yellow", "red"].includes(req.body.card_type)) return res.status(400).json({ error: "Match, Ã©quipe, type et minute valides obligatoires." });
   if (player_id && !isUuid(player_id)) return res.status(400).json({ error: "Joueur invalide." });
   const { data, error } = await db().from("cards").insert({ match_id, team_id, player_id, card_type: req.body.card_type, minute }).select("id,match_id,player_id,team_id,card_type,minute").single();
   if (error) return res.status(400).json({ error: error.message });
@@ -360,7 +360,7 @@ app.get("/api/referees", asyncRoute(async (req, res) => {
 
 app.post("/api/referees", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
   const first_name = cleanText(req.body.first_name, 80), last_name = cleanText(req.body.last_name, 80);
-  if (!first_name || !last_name) return res.status(400).json({ error: "Prénom et nom obligatoires." });
+  if (!first_name || !last_name) return res.status(400).json({ error: "PrÃ©nom et nom obligatoires." });
   const { data, error } = await db().from("referees").insert({ first_name, last_name, license_number: cleanText(req.body.license_number, 80) }).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
@@ -376,7 +376,7 @@ app.put("/api/referees/:id", requireAuth, requireAdmin, asyncRoute(async (req, r
 
 app.delete("/api/referees/:id", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
   const { error } = await db().from("referees").delete().eq("id", req.params.id);
-  if (error) return res.status(409).json({ error: "Impossible de supprimer cet arbitre s'il est affecté à un match." });
+  if (error) return res.status(409).json({ error: "Impossible de supprimer cet arbitre s'il est affectÃ© Ã  un match." });
   res.json({ success: true });
 }));
 
@@ -389,7 +389,7 @@ app.get("/api/stadiums", asyncRoute(async (req, res) => {
 app.post("/api/stadiums", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
   const name = cleanText(req.body.name, 120);
   const capacity = req.body.capacity === "" || req.body.capacity == null ? null : integer(req.body.capacity, { min: 0, max: 200000 });
-  if (!name || (req.body.capacity !== "" && req.body.capacity != null && capacity === null)) return res.status(400).json({ error: "Nom et capacité valides obligatoires." });
+  if (!name || (req.body.capacity !== "" && req.body.capacity != null && capacity === null)) return res.status(400).json({ error: "Nom et capacitÃ© valides obligatoires." });
   const { data, error } = await db().from("stadiums").insert({ name, city: cleanText(req.body.city, 100), capacity, address: cleanText(req.body.address, 200) }).select().single();
   if (error) return res.status(400).json({ error: error.message });
   res.status(201).json(data);
@@ -406,7 +406,7 @@ app.put("/api/stadiums/:id", requireAuth, requireAdmin, asyncRoute(async (req, r
 
 app.delete("/api/stadiums/:id", requireAuth, requireAdmin, asyncRoute(async (req, res) => {
   const { error } = await db().from("stadiums").delete().eq("id", req.params.id);
-  if (error) return res.status(409).json({ error: "Impossible de supprimer ce stade s'il est utilisé par un match." });
+  if (error) return res.status(409).json({ error: "Impossible de supprimer ce stade s'il est utilisÃ© par un match." });
   res.json({ success: true });
 }));
 
@@ -445,3 +445,4 @@ app.use((err, req, res, next) => {
 if (process.env.VERCEL !== "1") app.listen(PORT, () => console.log(`FOOT26 sur http://localhost:${PORT}`));
 
 module.exports = app;
+
